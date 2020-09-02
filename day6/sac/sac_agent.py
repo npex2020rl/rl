@@ -81,21 +81,21 @@ class SACAgent:
 
 
         # unroll batch
-        states = torch.tensor(batch.obs, dtype=torch.float).to(device)
-        actions = torch.tensor(batch.act, dtype=torch.float).to(device)
-        next_states = torch.tensor(batch.next_obs, dtype=torch.float).to(device)
-        rewards = torch.tensor(batch.rew, dtype=torch.float).to(device)
-        terminals = torch.tensor(batch.done, dtype=torch.float).to(device)
+        obs_batch = torch.tensor(batch.obs, dtype=torch.float).to(device)
+        act_batch = torch.tensor(batch.act, dtype=torch.float).to(device)
+        next_obs_batch = torch.tensor(batch.next_obs, dtype=torch.float).to(device)
+        rew_batch = torch.tensor(batch.rew, dtype=torch.float).to(device)
+        done_batch = torch.tensor(batch.done, dtype=torch.float).to(device)
 
-        masks = torch.tensor([1.]) - terminals
+        masks = torch.tensor([1.]) - done_batch
 
         with torch.no_grad():
-            next_actions, log_probs = self.pi(next_states, with_log_prob=True)
-            target_q1, target_q2 = self.target_Q(next_states, next_actions)
+            next_actions, log_probs = self.pi(next_obs_batch, with_log_prob=True)
+            target_q1, target_q2 = self.target_Q(next_obs_batch, next_actions)
             target_q = torch.min(target_q1, target_q2)
-            target = rewards + self.gamma * masks * (target_q - self.alpha * log_probs)
+            target = rew_batch + self.gamma * masks * (target_q - self.alpha * log_probs)
 
-        out1, out2 = self.Q(states, actions)
+        out1, out2 = self.Q(obs_batch, act_batch)
 
         Q_loss1 = torch.mean((out1 - target)**2)
         Q_loss2 = torch.mean((out2 - target)**2)
@@ -105,10 +105,10 @@ class SACAgent:
         Q_loss.backward()
         self.Q_optimizer.step()
 
-        actions, log_probs = self.pi(states, with_log_prob=True)
+        act_batch, log_probs = self.pi(obs_batch, with_log_prob=True)
 
         freeze(self.Q)
-        q1, q2 = self.Q(states, actions)
+        q1, q2 = self.Q(obs_batch, act_batch)
         q = torch.min(q1, q2)
 
         pi_loss = torch.mean(self.alpha * log_probs - q)
