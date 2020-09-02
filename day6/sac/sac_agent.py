@@ -105,10 +105,10 @@ class SACAgent:
         Q_loss.backward()
         self.Q_optimizer.step()
 
-        act_batch, log_probs = self.pi(obs_batch, with_log_prob=True)
+        actions, log_probs = self.pi(obs_batch, with_log_prob=True)
 
         freeze(self.Q)
-        q1, q2 = self.Q(obs_batch, act_batch)
+        q1, q2 = self.Q(obs_batch, actions)
         q = torch.min(q1, q2)
 
         pi_loss = torch.mean(self.alpha * log_probs - q)
