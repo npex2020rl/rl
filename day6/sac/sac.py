@@ -16,6 +16,7 @@ def run_sac(
             train_interval=50,
             buffer_size=1e6,
             fill_buffer=20000,
+            truncate=1000,
             gamma=0.99,
             pi_lr=3e-4,
             q_lr=3e-4,
@@ -35,6 +36,9 @@ def run_sac(
     env = gym.make(env_id)
 
     dimS, dimA, ctrl_range, max_ep_len = get_env_spec(env)
+
+    if truncate is not None:
+        max_ep_len = truncate
 
     agent = SACAgent(
                      dimS,
@@ -123,6 +127,8 @@ if __name__ == '__main__':
     default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('--truncate', required=False, default=1000, type=int)
     parser.add_argument('--env', required=True)
     parser.add_argument('--device', required=False, default=default_device)
     parser.add_argument('--max_iter', required=False, default=5e5, type=float)
@@ -145,6 +151,7 @@ if __name__ == '__main__':
             start_train=args.start_train,
             train_interval=args.train_interval,
             fill_buffer=args.fill_buffer,
+            truncate=args.truncate,
             gamma=0.99,
             pi_lr=args.lr,
             q_lr=args.lr,

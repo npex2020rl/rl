@@ -81,8 +81,8 @@ class SACAgent:
 
 
         # unroll batch
-        states = torch.tensor(batch.obs_buf, dtype=torch.float).to(device)
-        actions = torch.tensor(batch.act_buf, dtype=torch.float).to(device)
+        states = torch.tensor(batch.obs, dtype=torch.float).to(device)
+        actions = torch.tensor(batch.act, dtype=torch.float).to(device)
         next_states = torch.tensor(batch.next_obs, dtype=torch.float).to(device)
         rewards = torch.tensor(batch.rew, dtype=torch.float).to(device)
         terminals = torch.tensor(batch.done, dtype=torch.float).to(device)
@@ -123,7 +123,7 @@ class SACAgent:
 
         return
 
-    def single_eval(self, env_id):
+    def single_eval(self, env_id, render=False):
         """
         evaluation of the agent on a single episode
         """
@@ -133,24 +133,25 @@ class SACAgent:
         done = False
 
         while not done:
-
+            if render:
+                env.render()
 
             action = self.act(state, eval=True)
             state, reward, done, _ = env.step(action)
 
             ep_reward += reward
-
+        if render:
+            env.close()
 
         return ep_reward
 
     def eval(self, env_id, t, eval_num=10):
 
-
         scores = np.zeros(eval_num)
 
         for i in range(eval_num):
-            # render = True if (self.render and i == 0) else False
-            scores[i] = self.single_eval(env_id)
+            render = True if (self.render and i == 0) else False
+            scores[i] = self.single_eval(env_id, render)
 
         avg = np.mean(scores)
 
