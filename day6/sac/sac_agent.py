@@ -3,12 +3,10 @@ from torch.optim import Adam
 import numpy as np
 import gym
 import copy
-from rl_algos.buffer import ReplayBuffer
-from rl_algos.sac.sac_model import SACActor
-from rl_algos.td3.td3_model import DoubleCritic
-from rl_algos.utils import freeze, unfreeze
 
-import glfw
+from buffer import ReplayBuffer
+from sac_model import SACActor, DoubleCritic
+from utils import freeze, unfreeze
 
 
 class SACAgent:
@@ -59,7 +57,7 @@ class SACAgent:
 
         return
 
-    def get_action(self, state, eval=False):
+    def act(self, state, eval=False):
 
         state = torch.tensor(state, dtype=torch.float).to(self.device)
         with torch.no_grad():
@@ -81,14 +79,16 @@ class SACAgent:
 
         batch = self.buffer.sample_batch(batch_size=self.batch_size)
 
-        # unroll batch
-        states = torch.tensor(batch['state'], dtype=torch.float).to(device)
-        actions = torch.tensor(batch['action'], dtype=torch.float).to(device)
-        rewards = torch.tensor(batch['reward'], dtype=torch.float).to(device)
-        next_states = torch.tensor(batch['next_state'], dtype=torch.float).to(device)
-        terminals = torch.tensor(batch['done'], dtype=torch.float).to(device)
 
-        masks = 1.0 - terminals
+        # unroll batch
+        states = torch.tensor(batch.obs_buf, dtype=torch.float).to(device)
+        actions = torch.tensor(batch.act_buf, dtype=torch.float).to(device)
+        next_states = torch.tensor(batch.next_obs, dtype=torch.float).to(device)
+        rewards = torch.tensor(batch.rew, dtype=torch.float).to(device)
+        terminals = torch.tensor(batch.done, dtype=torch.float).to(device)
+
+        masks = torch.tensor([1.]) - terminals
+
         with torch.no_grad():
             next_actions, log_probs = self.pi(next_states, with_log_prob=True)
             target_q1, target_q2 = self.target_Q(next_states, next_actions)
@@ -135,7 +135,7 @@ class SACAgent:
         while not done:
 
 
-            action = self.get_action(state, eval=True)
+            action = self.act(state, eval=True)
             state, reward, done, _ = env.step(action)
 
             ep_reward += reward
