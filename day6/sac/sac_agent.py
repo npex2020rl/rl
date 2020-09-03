@@ -150,8 +150,8 @@ class SACAgent:
         scores = np.zeros(eval_num)
 
         for i in range(eval_num):
-            render = True if (self.render and i == 0) else False
-            scores[i] = self.single_eval(env_id, render)
+            render = True if (self.render == True and i == 0) else False
+            scores[i] = self.single_eval(env_id, False)
 
         avg = np.mean(scores)
 
