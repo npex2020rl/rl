@@ -109,9 +109,14 @@ def run_sac(
                 agent.train()
 
         if t % eval_interval == 0:
-            log = agent.eval(env_id, t)
-            print('total duration : {:.4f} sec'.format(time.time() - start))
+            eval_score = eval_agent(agent, env_id, render=False)
+            log = [t, eval_score]
+            print('step {} : {:.4f}'.format(t, eval_score))
             eval_logger.writerow(log)
+
+        if t % (10 * eval_interval) == 0:
+            if render:
+                render_agent(agent, env_id)
 
         if t % checkpoint_interval == 0:
             agent.save_model('./checkpoints/' + env_id + '/sac_{}th_iter_'.format(t))
@@ -120,6 +125,40 @@ def run_sac(
     eval_log.close()
 
     return
+
+
+def render_agent(agent, env_id):
+    eval_agent(agent, env_id, eval_num=1, render=True)
+
+
+def eval_agent(agent, env_id, eval_num=5, render=False):
+    log = []
+    for ep in range(eval_num):
+        env = gym.make(env_id)
+
+        state = env.reset()
+        step_count = 0
+        ep_reward = 0
+        done = False
+
+        while not done:
+            if render and ep == 0:
+                env.render()
+
+            action = agent.act(state, eval=True)
+            next_state, reward, done, _ = env.step(action)
+            step_count += 1
+            state = next_state
+            ep_reward += reward
+
+        if render and ep == 0:
+            env.close()
+        log.append(ep_reward)
+
+    avg = sum(log) / eval_num
+
+    return avg
+
 
 
 if __name__ == '__main__':
