@@ -97,7 +97,7 @@ def run_trpo(
             total_t += 1
 
         # train agent at the end of each epoch
-        agent.train(num_iter=10)
+        agent.train(num_iter=1)
 
     train_log.close()
     eval_log.close()
